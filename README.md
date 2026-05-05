@@ -41,3 +41,4 @@ The backend is built as a dedicated **Web API**, focusing on a strictly layered 
 
 ### Demo
 A full demonstration of the application's functionality, including the upload process and the processed image results, can be found in this **YouTube video**: https://www.youtube.com/watch?v=0GJmp2A90oE
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/8d24f418-717d-4e26-be59-5b4287ce7697" />
