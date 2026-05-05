@@ -1,34 +1,43 @@
 ### Setup Instructions
 
-**1. Backend (ASP.NET Core)**
-*   **Database Setup**: You need a PostgreSQL instance running. Create a database named `image_overlay_db`.
-*   **Connection String**: Open `backend/appsettings.json` and update the `DefaultConnection` string with your PostgreSQL username and password.
-*   **Apply Migrations**: Open your terminal in the `backend/` folder and run `dotnet ef database update`. This creates the tables for image metadata and technical fields like `FileSize` and `Dimensions`.
-*   **Run the API**: Execute `dotnet run`. The backend will start at `http://localhost:5000`. You can visit `http://localhost:5000/swagger` to see the API documentation.
+**1. Backend (ASP.NET Core Web API)**
+*   **Database**: Ensure PostgreSQL is running and create a database (e.g., `task1_db`).
+*   **Configuration**: Update the `DefaultConnection` string in `backend/appsettings.json` with your PostgreSQL credentials.
+*   **Migrations**: Run `dotnet ef database update` in the `backend/` directory to build the schema, including technical fields like `FileSize` and `Dimensions`.
+*   **Execution**: Run `dotnet run`. The API will start at `http://localhost:5000`. You can access the Swagger UI at `/swagger` to test the endpoints.
 
 **2. Frontend (Next.js)**
-*   **Install Dependencies**: Navigate to the `frontend/` directory and run `npm install`. This installs React, Lucide-react for icons, and Next.js.
-*   **Configuration**: Ensure the `API_BASE` in your `lib/api.ts` (or equivalent) is set to `http://localhost:5000/api/Images` so it can talk to the backend.
-*   **Start the App**: Run `npm run dev`. The UI will be available at `http://localhost:3000`.
+*   **Dependencies**: Run `npm install` in the `frontend/` directory.
+*   **API Connection**: Verify that the API base URL in your frontend services points to `http://localhost:5000/api/Images`.
+*   **Execution**: Run `npm run dev`. The application will be accessible at `http://localhost:3000`.
 
 ---
 
 ### Project Specification
 
-This is a full-stack solution designed to handle secure image uploads and dynamic text-overlay processing.
+This project is a decoupled full-stack application centered around secure image management and automated processing.
 
-**Backend Implementation**
-*   **Architecture**: I followed a layered approach (Controllers, Services, Repositories) similar to Spring Boot patterns. This keeps business logic—like the image processing—completely separate from database access.
-*   **Security**: The system doesn't trust user-provided filenames. It generates unique names using **GUIDs** and timestamps to prevent collisions. It also validates the "Magic Numbers" of files to ensure they are actually JPG or PNG images before saving.
-*   **Image Processing**: Using the **ImageSharp** library, the service automatically applies text overlays. To ensure the text is readable on any background, I implemented a dual-drawing technique: a black shadow offset is drawn first, followed by the white main text.
-*   **Persistence**: Data is stored in PostgreSQL via Entity Framework Core, while physical files are managed in the `wwwroot/uploads` directory.
+**Backend Implementation (ASP.NET Core Web API)**
+The backend is built as a dedicated **Web API**, focusing on a strictly layered architecture to keep the logic clean and maintainable. I organized the project into the following structure:
+*   **Controllers**: Handle HTTP requests and route them to the appropriate services.
+*   **Services**: Contain the core business logic, including the **ImageSharp** implementation for processing text overlays.
+*   **Repositories**: Manage data persistence and queries using Entity Framework Core and PostgreSQL.
+*   **Entities**: Define the database schema.
+*   **DTOs**: Create clear contracts for data exchange, ensuring internal models aren't exposed to the frontend.
+*   **Mappers**: Handle the conversion between Entities and DTOs.
+*   **Middleware**: Includes a global exception handler to return clean JSON errors instead of raw stack traces.
+*   **Exceptions**: Contains custom exception classes for specific scenarios like "Image Not Found."
 
-**Frontend Implementation**
-*   **Framework**: Built with **Next.js 14** using the App Router for clean navigation.
-*   **State Management**: Uses React hooks to manage image previews and upload states. 
-*   **Interface**: Styled with **Tailwind CSS** for a dark-mode aesthetic and **Lucide-react** for the iconography. The frontend communicates with the backend via a dedicated API service layer to keep components clean.
+**Technical Highlights**:
+*   **Security**: The system renames files using **GUIDs** and timestamps to prevent collisions and directory traversal. It also performs **Magic Number** validation to verify file headers (JPG/PNG) before storage.
+*   **Processing**: Text overlays are rendered with a dual-layer technique (black shadow offset under white text) to ensure readability across different image backgrounds.
+
+**Frontend Implementation (Next.js)**
+*   The frontend uses **Next.js 14** with the App Router.
+*   **UI/UX**: Styled with **Tailwind CSS** for a dark-mode look, utilizing **Lucide-react** for icons.
+*   **State**: Handles real-time image previews and dynamic upload states using React hooks.
 
 ---
 
-**Demo**: A video showing the upload, metadata editing, and processed overlay results is included in the repository root.
-https://www.youtube.com/watch?v=0GJmp2A90oE
+### Demo
+A full demonstration of the application's functionality, including the upload process and the processed image results, can be found in this **YouTube video**: https://www.youtube.com/watch?v=0GJmp2A90oE
