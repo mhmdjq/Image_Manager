@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using ImageOverlay.Api.Models;
+using ImageOverlay.Api.Entities;
 
 namespace ImageOverlay.Api.Data;
 
 public class AppDbContext : DbContext
 {
 	public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-	public DbSet<ImageRecord> Images => Set<ImageRecord>();
+	public DbSet<ImageEntity> Images => Set<ImageEntity>();
 }

@@ -1,53 +1,60 @@
 using ImageOverlay.Api.Data;
+using ImageOverlay.Api.Middleware;
+using ImageOverlay.Api.Repositories;
 using ImageOverlay.Api.Services;
 using Microsoft.EntityFrameworkCore;
-using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Services
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-
-// We are using a different way to add Swagger that avoids the 'Models' conflict
-builder.Services.AddSwaggerGen();
-
-// Database (SQLite)
-//builder.Services.AddDbContext<AppDbContext>(options =>
-//    options.UseSqlite("Data Source=images.db"));
-
-// Switch from UseSqlite to UseNpgsql
+// --- 1. Database Configuration (PostgreSQL) ---
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Register our Image Service
-builder.Services.AddScoped<ImageProcessor>();
+// --- 2. Dependency Injection Registration ---
+// This fixes the 'Unable to resolve service' error you saw
+builder.Services.AddScoped<IImageRepository, ImageRepository>();
+builder.Services.AddScoped<IImageService, ImageService>();
 
-// CORS for Frontend
-builder.Services.AddCors(options => {
-    options.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+// --- 3. Core API Services ---
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// --- 4. CORS Policy (For your React/Next.js frontend) ---
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
 
 var app = builder.Build();
 
-// Create 'wwwroot/uploads' folder
-var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");
-if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
+// --- 5. Custom Middleware Pipeline ---
+// Place ExceptionMiddleware FIRST to catch errors from all other stages
+app.UseMiddleware<ExceptionMiddleware>();
 
-// Enable Swagger UI
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
+// Ensure the uploads directory exists so the Service doesn't crash on the first save
+var uploadsPath = Path.Combine(app.Environment.WebRootPath, "uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+
+// Essential for serving the images so your React app can display them
 app.UseStaticFiles();
+
 app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
-
-// Initialize Database
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
-}
 
 app.Run();
